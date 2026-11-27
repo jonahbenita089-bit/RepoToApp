@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 80 &&
+             data.preferredContactType in ['GOOGLE', 'EMAIL', 'PHONE'] &&
+             (!('contactEmail' in data) || (data.contactEmail is string && data.contactEmail.size() <= 120)) &&
+             (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 30)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidSavedRepo(data) {
+      return data.fullName is string &&
+             data.fullName.size() >= 3 &&
+             data.fullName.size() <= 140 &&
+             data.owner is string &&
+             data.owner.size() >= 1 &&
+             data.owner.size() <= 60 &&
+             data.repo is string &&
+             data.repo.size() >= 1 &&
+             data.repo.size() <= 80 &&
+             data.description is string &&
+             data.description.size() <= 500 &&
+             data.defaultBranch is string &&
+             data.defaultBranch.size() >= 1 &&
+             data.defaultBranch.size() <= 100 &&
+             data.detectedStack is string &&
+             data.detectedStack.size() >= 1 &&
+             data.detectedStack.size() <= 40 &&
+             data.avatarUrl is string &&
+             data.avatarUrl.size() <= 500 &&
+             data.htmlUrl is string &&
+             data.htmlUrl.size() >= 1 &&
+             data.htmlUrl.size() <= 500 &&
+             data.supportsApk is bool &&
+             data.supportsIpa is bool &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'preferredContactType', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'preferredContactType', 'contactEmail', 'phoneNumber', 'photoUrl', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'preferredContactType', 'contactEmail', 'phoneNumber', 'photoUrl', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /saved_repos/{repoId} {
+        allow get: if isOwner(userId) && isValidId(repoId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(repoId) &&
+                         incoming().keys().hasAll(['fullName', 'owner', 'repo', 'description', 'defaultBranch', 'detectedStack', 'avatarUrl', 'htmlUrl', 'supportsApk', 'supportsIpa', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['fullName', 'owner', 'repo', 'description', 'defaultBranch', 'detectedStack', 'avatarUrl', 'htmlUrl', 'supportsApk', 'supportsIpa', 'createdAt', 'updatedAt']) &&
+                         isValidSavedRepo(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(repoId) &&
+                         isValidSavedRepo(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['description', 'defaultBranch', 'detectedStack', 'avatarUrl', 'htmlUrl', 'supportsApk', 'supportsIpa', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(repoId);
+      }
+    }
+  }
+}

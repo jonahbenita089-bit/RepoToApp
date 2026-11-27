@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">RepoForge</string>
+    <string name="nav_studio">Studio</string>
+    <string name="nav_workflow">Pipeline</string>
+    <string name="nav_runs">Runs</string>
+    <string name="nav_artifacts">Packages</string>
+    <string name="nav_settings">Account</string>
+    <string name="auth_title">Create your RepoForge Account</string>
+    <string name="auth_subtitle">Sign in with Google and link your email or phone number to sync repositories across devices.</string>
+    <string name="sign_in_google">Continue with Google</string>
+    <string name="hero_title">GitHub to APK &amp; IPA</string>
+    <string name="hero_subtitle">Inspect any repository, generate cross-platform GitHub Actions workflows, trigger cloud builds, and download Android APK and iOS IPA artifacts.</string>
+    <string name="repo_input_label">GitHub Repository URL or owner/repo</string>
+    <string name="repo_input_placeholder">owner/repository or https://github.com/owner/repo</string>
+    <string name="inspect_repo">Inspect Repo</string>
+    <string name="cd_hero_banner">Build pipeline studio illustration</string>
+    <string name="cd_repo_avatar">Repository owner avatar</string>
+    <string name="cd_clear_input">Clear repository input</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="cd_open_browser">Open in browser</string>
+    <string name="cd_copy_yaml">Copy workflow YAML</string>
+    <string name="cd_share_file">Share file</string>
+    <string name="cd_download_artifact">Download package</string>
+</resources>
